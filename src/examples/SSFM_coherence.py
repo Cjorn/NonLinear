@@ -94,7 +94,10 @@ g12, results = evol.calculate_coherence(pulse_in=pulse, fiber=fiber1, n_steps=St
 def dB(num):
     return 10 * np.log10(np.abs(num)**2)
 
-for y, AW, AT, pulse_out in results:
+print len(results)
+print results[0][0]
+# print len(results[0])
+for y, AW, AT, pulse_in, pulse_out in results:
     F = pulse_out.F_THz     # Frequency grid of pulse (THz)
     AW = AW.transpose()
     zW = dB(AW[:, (F > 0)] )
