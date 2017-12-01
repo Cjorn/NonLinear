@@ -9,15 +9,15 @@ GDD     = 0.0    # Group delay dispersion (ps^2)
 TOD     = 0.0    # Third order dispersion (ps^3)
 
 Window  = 10.0   # simulation window (ps)
-Steps   = 40     # simulation steps
+Steps   = 100     # simulation steps
 Points  = 2**13  # simulation points
-error   = 0.2
+error   = 0.02
 
 beta2   = -120     # (ps^2/km)
 beta3   = 0.00     # (ps^3/km)
 beta4   = 0.005    # (ps^4/km)
         
-Length  = 10    # length in mm
+Length  = 4    # length in mm
     
 Alpha   = 0.0     # attentuation coefficient (dB/cm)
 Gamma   = 1000    # Gamma (1/(W km) 
@@ -75,13 +75,23 @@ def dB(num):
 zW = dB( np.transpose(AW)[:, (F > 0)] )
 zT = dB( np.transpose(AT) )
 
+zW = np.abs( np.transpose(AW)[:, (F > 0)] )
+zT = np.abs( np.transpose(AT) )
+
+
 y_mm = y * 1e3 # convert distance to mm
 
-ax0.plot(pulse_out.F_THz,    dB(pulse_out.AW),  color = 'r')
-ax1.plot(pulse_out.T_ps,     dB(pulse_out.AT),  color = 'r')
+# ax0.plot(pulse_out.F_THz,    dB(pulse_out.AW),  color = 'r')
+# ax1.plot(pulse_out.T_ps,     dB(pulse_out.AT),  color = 'r')
 
-ax0.plot(pulse.F_THz,    dB(pulse.AW),  color = 'b')
-ax1.plot(pulse.T_ps,     dB(pulse.AT),  color = 'b')
+ax0.plot(pulse_out.F_THz,    np.abs(pulse_out.AW),  color = 'r')
+ax1.plot(pulse_out.T_ps,     np.abs(pulse_out.AT),  color = 'r')
+
+# ax0.plot(pulse.F_THz,    dB(pulse.AW),  color = 'b')
+# ax1.plot(pulse.T_ps,     dB(pulse.AT),  color = 'b')
+
+ax0.plot(pulse.F_THz,    np.abs(pulse.AW),  color = 'b')
+ax1.plot(pulse.T_ps,     np.abs(pulse.AT),  color = 'b')
 
 extent = (np.min(F[F > 0]), np.max(F[F > 0]), 0, Length)
 ax2.imshow(zW, extent=extent, 
@@ -96,7 +106,7 @@ ax3.imshow(zT, extent=extent,
 
 ax0.set_ylabel('Intensity (dB)')
 ax0.set_ylim( - 80,  0)
-ax1.set_ylim( - 40, 40)
+# ax1.set_ylim( - 40, 40)
 
 ax2.set_ylabel('Propagation distance (mm)')
 ax2.set_xlabel('Frequency (THz)')
@@ -108,8 +118,8 @@ fig, axs = plt.subplots(1,2,figsize=(10,5))
 
 
 for ax, gate_type in zip(axs,('xfrog', 'frog')):
-    DELAYS, FREQS, extent, spectrogram = pulse_out.spectrogram(gate_type=gate_type, gate_function_width_ps=0.05, time_steps=1000)
-    ax.imshow(spectrogram, aspect='auto', extent=extent)
+    DELAYS, FREQS, extent, spectrogram = pulse_out.spectrogram(gate_type=gate_type, gate_function_width_ps=0.02, time_steps=3000)
+    ax.imshow(spectrogram, aspect='auto', extent=extent, interpolation='none')
     ax.set_xlabel('Time (ps)')
     ax.set_ylabel('Frequency (THz)')
     ax.set_title(gate_type)
