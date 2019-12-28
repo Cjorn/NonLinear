@@ -60,7 +60,7 @@ class FiberInstance:
                        fiber_db_dir = None):
         self.c_mks = constants.speed_of_light
         self.c = constants.speed_of_light * 1e9/1e12 # c in nm/ps
-        self.is_simple_fiber = False
+        self.gain_type = 'simple' # options are 'simple', 'laser gain', 'frequency dependent'
         self.fiberloader = JSONFiberLoader.JSONFiberLoader(fiber_db, 
                                                            fiber_db_dir)
         self.dispersion_changes_with_z = False
@@ -301,18 +301,49 @@ class FiberInstance:
             
         else:
             return -1
-            
+     
+    def set_gain(self, gain):
+        """ Allows the gain or loss (negative  gain) to be set. 
+        Gain can either be a single number or an array that is equal to the length 
+        of the frequency array from the pulse. 
+        
+        ...At some point we should enable the laser gain mode of operation..." 
+        """
+        
+        if np.array(gain).size == 1:
+            self.gain == gain
+            self.gain_type = 'simple'
+            if gain != 0:
+                self.fiberspecs["is_gain"] = True
+                
+        else:
+            self.fiberspecs["gain_y_data"] = gain
+            self.gain_type = 'frequency dependent'
+            self.fiberspecs["is_gain"] = True
             
     def get_gain(self,pulse,output_power = 1):
-        """ Retrieve gain spectrum for fiber. If fiber has 'simple gain', this
-        is a scalar. If the fiber has a gain spectrum (eg EDF or YDF), this will
-        return this spectrum as a vector corresponding to the Pulse class
-        frequency axis. In this second case, the output power must be specified, from
-        which the gain/length is calculated. """
+        """ 
+        Retrieve gain spectrum for fiber. 
+        Of course, for loss (attentuation) negative values for gain can be used.
+        
+        The behavior depends on the self.gain_type variable, which can have three values. 
+        
+        1) If 'simple', then a single value for the gain/loss is returned.
+        2) If 'frequency dependent' then the gain varies as a function of the frequency and 
+        the spectrum will be returned  as a vector corresponding to the Pulse class
+        frequency axis
+        3) If 'laser gain', then the output power must be specified, from
+        which the gain/length is calculated. 
+        """
+        
         if self.fiberspecs["is_gain"]:
-            if self.is_simple_fiber:
+            if self.gain_type == 'simple':
                 return self.gain
-            else:
+                
+            elif self.gain_type == 'frequency dependent':
+                return np.array(self.fiberspecs["gain_y_data"])
+            
+            elif self.gain_type == 'laser gain':
                 # If the fiber is generated then it has no gain spectrum
                 # and an array with all values equal to self.gain is returned.
                 # This is signaled by gain_x_data.
@@ -341,6 +372,10 @@ class FiberInstance:
                     return gain_spec * scale_factor.x
                 else:
                     return np.ones((pulse.NPTS,)) * self.gain
+                
+            else:
+                raise ValueError('The gain type is not recognized. gain_type = %s'%self.gain_type)
+                
         else:
             return np.zeros((pulse.NPTS,))
 
